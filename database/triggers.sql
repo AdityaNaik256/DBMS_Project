@@ -65,96 +65,9 @@ BEGIN
         FROM    matches
         WHERE   match_id = NEW.match_id;
 
-        -- Remove stale standing rows for both teams
-        DELETE FROM standings
-        WHERE  tournament_id = v_tournament_id
-          AND  team_id IN (v_home_team_id, v_away_team_id);
-
-        -- Rebuild standings for home team from all completed matches
-        INSERT INTO standings
-            (tournament_id, team_id, played, won, drawn, lost,
-             goals_for, goals_against, points)
-        SELECT
-            m.tournament_id,
-            v_home_team_id,
-            COUNT(*)                                                          AS played,
-            SUM(CASE
-                    WHEN m.home_team_id = v_home_team_id
-                         AND ms2.home_score > ms2.away_score                 THEN 1
-                    WHEN m.away_team_id = v_home_team_id
-                         AND ms2.away_score > ms2.home_score                 THEN 1
-                    ELSE 0 END)                                               AS won,
-            SUM(CASE WHEN ms2.home_score = ms2.away_score                    THEN 1
-                     ELSE 0 END)                                             AS drawn,
-            SUM(CASE
-                    WHEN m.home_team_id = v_home_team_id
-                         AND ms2.home_score < ms2.away_score                 THEN 1
-                    WHEN m.away_team_id = v_home_team_id
-                         AND ms2.away_score < ms2.home_score                 THEN 1
-                    ELSE 0 END)                                               AS lost,
-            SUM(CASE
-                    WHEN m.home_team_id = v_home_team_id THEN ms2.home_score
-                    ELSE ms2.away_score END)                                  AS goals_for,
-            SUM(CASE
-                    WHEN m.home_team_id = v_home_team_id THEN ms2.away_score
-                    ELSE ms2.home_score END)                                  AS goals_against,
-            SUM(CASE
-                    WHEN m.home_team_id = v_home_team_id
-                         AND ms2.home_score > ms2.away_score                 THEN 3
-                    WHEN m.away_team_id = v_home_team_id
-                         AND ms2.away_score > ms2.home_score                 THEN 3
-                    WHEN ms2.home_score = ms2.away_score                     THEN 1
-                    ELSE 0 END)                                               AS points
-        FROM    matches      m
-        JOIN    match_scores ms2 ON m.match_id = ms2.match_id
-        WHERE   m.tournament_id = v_tournament_id
-          AND   m.match_status  = 'Completed'
-          AND   (m.home_team_id = v_home_team_id
-              OR m.away_team_id = v_home_team_id)
-        GROUP BY m.tournament_id;
-
-        -- Rebuild standings for away team from all completed matches
-        INSERT INTO standings
-            (tournament_id, team_id, played, won, drawn, lost,
-             goals_for, goals_against, points)
-        SELECT
-            m.tournament_id,
-            v_away_team_id,
-            COUNT(*)                                                          AS played,
-            SUM(CASE
-                    WHEN m.home_team_id = v_away_team_id
-                         AND ms2.home_score > ms2.away_score                 THEN 1
-                    WHEN m.away_team_id = v_away_team_id
-                         AND ms2.away_score > ms2.home_score                 THEN 1
-                    ELSE 0 END)                                               AS won,
-            SUM(CASE WHEN ms2.home_score = ms2.away_score                    THEN 1
-                     ELSE 0 END)                                             AS drawn,
-            SUM(CASE
-                    WHEN m.home_team_id = v_away_team_id
-                         AND ms2.home_score < ms2.away_score                 THEN 1
-                    WHEN m.away_team_id = v_away_team_id
-                         AND ms2.away_score < ms2.home_score                 THEN 1
-                    ELSE 0 END)                                               AS lost,
-            SUM(CASE
-                    WHEN m.home_team_id = v_away_team_id THEN ms2.home_score
-                    ELSE ms2.away_score END)                                  AS goals_for,
-            SUM(CASE
-                    WHEN m.home_team_id = v_away_team_id THEN ms2.away_score
-                    ELSE ms2.home_score END)                                  AS goals_against,
-            SUM(CASE
-                    WHEN m.home_team_id = v_away_team_id
-                         AND ms2.home_score > ms2.away_score                 THEN 3
-                    WHEN m.away_team_id = v_away_team_id
-                         AND ms2.away_score > ms2.home_score                 THEN 3
-                    WHEN ms2.home_score = ms2.away_score                     THEN 1
-                    ELSE 0 END)                                               AS points
-        FROM    matches      m
-        JOIN    match_scores ms2 ON m.match_id = ms2.match_id
-        WHERE   m.tournament_id = v_tournament_id
-          AND   m.match_status  = 'Completed'
-          AND   (m.home_team_id = v_away_team_id
-              OR m.away_team_id = v_away_team_id)
-        GROUP BY m.tournament_id;
+        -- Delegate per-team rebuild to the helper procedure
+        CALL RebuildTeamStandings(v_tournament_id, v_home_team_id);
+        CALL RebuildTeamStandings(v_tournament_id, v_away_team_id);
 
     END IF;
 END$$
