@@ -17,7 +17,9 @@ A full-stack web application for managing sports tournaments, teams, players, ma
 
 ## Setup
 
-### 1. Database
+### Local Development
+
+#### 1. Database
 ```sql
 -- Run these in order in MySQL:
 source database/schema.sql
@@ -27,7 +29,7 @@ source database/triggers.sql
 source database/sample_data.sql   -- optional sample data
 ```
 
-### 2. Backend
+#### 2. Backend
 ```bash
 cd backend
 cp ../.env.example .env           # edit .env with your DB credentials
@@ -36,6 +38,33 @@ npm start                          # runs on http://localhost:3000
 ```
 
 Open **http://localhost:3000** in your browser.
+
+---
+
+### Deploy to Railway (Public URL)
+
+[Railway](https://railway.app) hosts both Node.js and MySQL for free and gives you a public `https://<app>.up.railway.app` URL accessible from any laptop.
+
+1. **Sign up** at [railway.app](https://railway.app) (free with GitHub login).
+
+2. **New Project → Deploy from GitHub repo** → select `AdityaNaik256/DBMS_Project`.  
+   Railway will pick up `railway.json` automatically — no root-directory setting needed.
+
+3. **Add a MySQL database**: inside the project click **"+ New" → "Database" → "MySQL"**.  
+   Railway injects the `MYSQLHOST`, `MYSQLUSER`, `MYSQLPASSWORD`, `MYSQLDATABASE`, and `MYSQLPORT` env vars automatically — no manual configuration needed.
+
+4. **Seed the database**: use the connection details shown in Railway's MySQL service panel to connect with any MySQL client (e.g. TablePlus, DBeaver, or the `mysql` CLI) and run:
+   ```sql
+   source database/schema.sql
+   source database/functions.sql
+   source database/procedures.sql
+   source database/triggers.sql
+   source database/sample_data.sql   -- optional
+   ```
+
+5. **Generate a public domain**: in the Railway service panel click **"Settings" → "Networking" → "Generate Domain"**.
+
+Your app will be live at `https://<your-app>.up.railway.app` — shareable with anyone.
 
 ## Project Structure
 ```
