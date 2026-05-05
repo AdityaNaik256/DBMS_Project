@@ -10,7 +10,7 @@ router.get('/top-scorers/:tournament_id', async (req, res) => {
         p.player_id,
         p.player_name,
         te.team_name,
-        SUM(ps.goals) AS total_goals
+        SUM(ps.goals_scored) AS total_goals
       FROM player_stats ps
       JOIN players p     ON ps.player_id = p.player_id
       JOIN teams te      ON p.team_id    = te.team_id
@@ -94,7 +94,7 @@ router.get('/:id', async (req, res) => {
 
     const [statsRows] = await pool.query(`
       SELECT
-        COALESCE(SUM(ps.goals),   0) AS total_goals,
+        COALESCE(SUM(ps.goals_scored), 0) AS total_goals,
         COALESCE(SUM(ps.assists), 0) AS total_assists,
         COUNT(ps.stat_id)            AS matches_played
       FROM player_stats ps

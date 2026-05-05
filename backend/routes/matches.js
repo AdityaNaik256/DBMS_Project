@@ -78,7 +78,7 @@ router.get('/:id', async (req, res) => {
         ps.stat_id,
         p.player_name,
         te.team_name,
-        ps.goals,
+        ps.goals_scored,
         ps.assists,
         ps.yellow_cards,
         ps.red_cards,
